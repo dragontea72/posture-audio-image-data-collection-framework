@@ -1,0 +1,200 @@
+import time
+import cv2
+import pygame
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import pandas as pd
+
+def collect_data():
+    print("Data collection in progress...")
+    time.sleep(1)  # Simulated time for data collection
+    print("Data collection completed.")
+'''
+def show_image(img_path, audio_path=None, duration=2000):
+    print(f"Showing image: {img_path} for {duration / 1000} seconds")
+    
+    if audio_path:
+        pygame.mixer.music.load(audio_path)
+        pygame.mixer.music.play()
+img = cv2.imread(img_path)
+    if img is None:
+        print(f"Error loading image: {img_path}")
+        return
+
+    cv2.imshow("Image", img)
+    cv2.waitKey(duration)  # Wait for the specified duration
+    cv2.destroyAllWindows()
+'''
+
+def show_image(img_path, audio_path=None, duration=2000):
+    if audio_path:
+        pygame.mixer.music.load(audio_path)
+        pygame.mixer.music.play()
+
+    img = cv2.imread(img_path)
+    if img is None:
+        print(f"Error: could not load image {img_path}")
+        return
+
+    window_name = "Stimulus"
+    
+    # Create fullscreen window
+    cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    
+    cv2.imshow(window_name, img)
+    cv2.waitKey(duration)
+    cv2.destroyAllWindows()
+
+def plot_gantt_with_images(iteration_num, is_first_trial=False):
+    # Define durations for each step
+    if is_first_trial:
+        durations = {
+            "ST_Trial_PreParadigm": 6,
+            "Countdown_3": 1,
+            "Countdown_2": 1,
+            "Countdown_1": 1,
+            "ST_Trial_Start": 1,
+            "ST_Trial_Open_6s": 6,
+            "ST_Trial_Close_6s": 6,
+            "ST_Trial_PostParadigm": 5
+        }
+        order = [
+            "ST_Trial_PreParadigm", "Countdown_3", "Countdown_2", "Countdown_1",
+            "ST_Trial_Start", "ST_Trial_Open_6s", "ST_Trial_Close_6s", "ST_Trial_PostParadigm"
+        ]
+    else:
+ durations = {
+            "ST_Trial_PreParadigm": 0, 
+            "ST_Trial_Open_6s": 6,
+            "Relax1": 1,
+            "ST_Trial_Close_6s": 6,
+            "Relax2": 5,
+            "ST_Trial_PostParadigm": 0 
+        }
+        order = [
+            "ST_Trial_PreParadigm", "ST_Trial_Open_6s", "Relax1", "ST_Trial_Close_6s", "Relax2", "ST_Trial_PostParadigm"
+        ]
+
+    image_map = {
+        
+        "ST_Trial_PreParadigm": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png",  # Example image
+        "Countdown_3": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png",  # Example image for countdown
+        "Countdown_2": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png",  # Example image for countdown
+        "Countdown_1": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png",  # Example image for countdown
+        "ST_Trial_Start": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png",  # Example image for start
+        "ST_Trial_Open_6s": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/openhand (1).jpg",
+        "Relax1": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png",
+        "ST_Trial_Close_6s": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/closehand (1).jpg",
+        "Relax2": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png",
+        "ST_Trial_PostParadigm": "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png"  # Image for PostParadigm
+    }
+ # Build the timeline per task
+    start_time = 0
+    tasks = []
+
+    for step in order:
+        duration = durations[step]
+        tasks.append({
+            "Task ID": f"Trial {iteration_num + 1} - {step}",
+            "Start Time": start_time,
+            "End Time": start_time + duration,
+            "Label": step
+        })
+        start_time += duration
+
+    df = pd.DataFrame(tasks)
+
+    fig, ax = plt.subplots(figsize=(12, 4))
+
+    for i, row in df.iterrows():
+        label = row["Label"]
+        img_path = image_map.get(label)
+
+        if img_path:
+            try:
+                img = mpimg.imread(img_path)
+ center_time = (row["Start Time"] + row["End Time"]) / 2
+                ax.imshow(img, extent=(center_time - 1, center_time + 1,
+                                       i - 0.4, i + 0.4),
+                          aspect='auto', zorder=10)
+            except FileNotFoundError:
+                print(f"Image not found: {img_path}")
+
+    # Axis config
+    ax.set_xlabel("Time (seconds)")
+    ax.set_ylabel("Task ID")
+    ax.set_yticks(range(len(df)))
+    ax.set_yticklabels(df["Task ID"])
+    ax.set_xlim(0, df["End Time"].max() + 1)
+    ax.set_title(f"EEG Timeline with Images - Trial {iteration_num + 1}")
+    plt.tight_layout()
+    plt.show()
+
+def main():
+    pygame.init()
+ # Image sequence for Trial 2-40 (Open, Relax1, Close, Relax2)
+    images = [
+        ("Open", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/openhand (1).jpg", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/open.mp3", 6000),  # 6 seconds
+        ("Relax1", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 1000),  # 1 second
+        ("Close", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/closehand (1).jpg", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/close.mp3", 6000),  # 6 seconds
+        ("Relax2", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 5000)  # 5 seconds
+    ]
+
+
+    thanks_image =  "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/thanks.png"
+    thanks_audio = "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/thanks.mp3"
+     
+    
+
+    for iteration in range(5):
+        logs = []
+        t0 = time.time()
+
+        print(f"\nStarting Trial {iteration + 1}")
+        collect_data()
+
+        is_first_trial = iteration == 0
+
+        # Show images with recording based on the trial
+        if is_first_trial:
+            # Handle Trial 1 separately (28 seconds)
+            trial_images = [
+ ("ST_Trial_PreParadigm", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 6000),
+                ("Countdown_3", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 1000),
+                ("Countdown_2", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 1000),
+                ("Countdown_1", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 1000),
+                ("ST_Trial_Start", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 1000),
+                ("ST_Trial_Open_6s", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/openhand (1).jpg", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/close.mp3", 6000),
+                ("ST_Trial_Close_6s", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/closehand (1).jpg", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/close.mp3", 6000),
+                ("ST_Trial_PostParadigm", "C:/Users/MU027088/Desktop/Prosthetic arm/Prosthetic arm Data collection Paradigm/plus sign.png", None, 5000)]
+        else:
+            # Use images for Trials 2-40
+            trial_images = images
+
+        # Show images with recording
+        for label, img_path, audio_path, duration_ms in trial_images:
+            show_image(img_path, audio_path, duration_ms)
+            logs.append({
+                "Label": label,
+                "Time (s)": round(time.time() - t0, 2)
+            })
+
+        # Plot timeline for this trial
+        logs_df = pd.DataFrame(logs)
+plot_gantt_with_images(iteration, is_first_trial)
+
+        # Break before next trial
+        print("Resting 5 seconds before next trial...\n")
+        time.sleep(5)
+
+    # End message
+    pygame.mixer.music.load(thanks_audio)
+    pygame.mixer.music.play()
+    cv2.imshow("Image", cv2.imread(thanks_image))
+    cv2.waitKey(7000)
+    cv2.destroyAllWindows()
+    print("Procedure completed under guidance.")
+
+if __name__ == "__main__":
+    main()
